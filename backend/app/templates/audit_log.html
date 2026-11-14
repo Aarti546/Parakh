@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Audit log · {{ project.name }} · Parakh{% endblock %}
+{% block content %}
+<p class="breadcrumbs"><a href="/projects">Projects</a> / <a href="/projects/{{ project.id }}">{{ project.name }}</a> / Audit log</p>
+<div class="page-heading"><div><p class="eyebrow">AUDIT LOG</p><h1>Change history</h1></div></div>
+<section class="panel"><div class="table-wrap"><table>
+  <thead><tr><th>When</th><th>Actor</th><th>Entity</th><th>Action</th><th>Changes</th></tr></thead>
+  <tbody>{% for entry in entries %}
+    <tr><td>{{ entry.created_at.strftime("%Y-%m-%d %H:%M UTC") }}</td><td>{{ entry.actor_user_id }}</td><td>{{ entry.entity_type }} #{{ entry.entity_id }}</td><td>{{ entry.action }}</td><td><code>{{ entry.changes }}</code></td></tr>
+  {% else %}<tr><td colspan="5" class="empty-state">No changes have been recorded.</td></tr>{% endfor %}</tbody>
+</table></div></section>
+{% endblock %}

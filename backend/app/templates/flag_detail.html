@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ flag.name }} · Parakh{% endblock %}
+{% block content %}
+<p class="breadcrumbs"><a href="/projects">Projects</a> / <a href="/projects/{{ flag.project_id }}">Project</a> / {{ flag.key }}</p>
+<section class="panel detail-panel">
+  <p class="eyebrow">FEATURE FLAG</p>
+  <h1>{{ flag.name }}</h1>
+  <p class="muted">{{ flag.description or "No description provided." }}</p>
+  <dl class="details">
+    <dt>Key</dt><dd><code>{{ flag.key }}</code></dd>
+    <dt>Value type</dt><dd>{{ flag.value_type }}</dd>
+    <dt>Default value</dt><dd><code>{{ flag.default_value }}</code></dd>
+    <dt>Created</dt><dd>{{ flag.created_at.strftime("%Y-%m-%d %H:%M UTC") }}</dd>
+  </dl>
+  <a class="button" href="/projects/{{ flag.project_id }}">Back to flags</a>
+</section>
+{% endblock %}
+

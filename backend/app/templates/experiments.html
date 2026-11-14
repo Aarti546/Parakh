@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Experiments · {{ project.name }} · Parakh{% endblock %}
+{% block content %}
+<p class="breadcrumbs"><a href="/projects">Projects</a> / <a href="/projects/{{ project.id }}">{{ project.name }}</a> / Experiments</p>
+<div class="page-heading"><div><p class="eyebrow">EXPERIMENTS</p><h1>Experiments</h1></div></div>
+<section class="panel">
+  <h2>Start an experiment</h2>
+  <form method="post" action="/projects/{{ project.id }}/experiments" class="form-row">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Experiment key<input name="key" pattern="[A-Za-z0-9_-]+" required></label>
+    <label>Flag<select name="flag_id" required>{% for flag in flags %}<option value="{{ flag.id }}">{{ flag.name }} ({{ flag.key }})</option>{% endfor %}</select></label>
+    <label>Environment<select name="environment_id" required>{% for environment in environments %}<option value="{{ environment.id }}">{{ environment.name }}</option>{% endfor %}</select></label>
+    <label>Primary metric event<input name="primary_metric" value="order_clicked" required></label>
+    <label>Control value<input name="control_value" value="green" required></label>
+    <label>Treatment value<input name="treatment_value" value="orange" required></label>
+    <button class="button primary" type="submit">Start 50/50 test</button>
+  </form>
+</section>
+<section class="panel">
+  <h2>Sample size calculator</h2>
+  <form method="post" action="/projects/{{ project.id }}/sample-size" class="form-row"
+        hx-post="/projects/{{ project.id }}/sample-size" hx-target="#sample-size-result" hx-swap="innerHTML">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Baseline conversion rate<input type="number" name="baseline_rate" value="0.10" min="0.001" max="0.99" step="0.001" required></label>
+    <label>Minimum detectable absolute lift<input type="number" name="minimum_detectable_effect" value="0.02" min="0.001" max="0.9" step="0.001" required></label>
+    <label>Power<input type="number" name="power" value="0.80" min="0.5" max="0.99" step="0.01" required></label>
+    <label>Alpha<input type="number" name="alpha" value="0.05" min="0.001" max="0.2" step="0.001" required></label>
+    <button class="button" type="submit">Calculate</button>
+  </form>
+  <div id="sample-size-result"></div>
+</section>
+<section class="panel">
+  <h2>Recent experiments</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Experiment</th><th>Metric</th><th>Status</th><th>Started</th></tr></thead>
+    <tbody>{% for experiment in experiments %}
+      <tr><td><a href="/experiments/{{ experiment.id }}/results">{{ experiment.key }}</a></td><td>{{ experiment.primary_metric }}</td><td>{{ experiment.status }}</td><td>{{ experiment.start_at.strftime("%Y-%m-%d %H:%M UTC") }}</td></tr>
+    {% else %}<tr><td colspan="4" class="empty-state">No experiments yet.</td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+{% endblock %}

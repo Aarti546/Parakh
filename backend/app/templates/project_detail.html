@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} · Parakh{% endblock %}
+{% block content %}
+<p class="breadcrumbs"><a href="/projects">Projects</a> / {{ project.name }}</p>
+<div class="page-heading">
+  <div><p class="eyebrow">PROJECT</p><h1>{{ project.name }}</h1><p class="muted">/{{ project.slug }}</p>
+    <p><a href="/projects/{{ project.id }}/experiments">Experiments</a> · <a href="/projects/{{ project.id }}/audit-log">Audit log</a></p>
+  </div>
+  {% if environments %}
+  <form method="get" action="/projects/{{ project.id }}">
+    <label class="compact-label">Environment
+      <select name="environment_id" onchange="this.form.submit()">
+        {% for environment in environments %}
+        <option value="{{ environment.id }}" {% if selected_environment and environment.id == selected_environment.id %}selected{% endif %}>{{ environment.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </form>
+  {% endif %}
+</div>
+{% if selected_environment %}
+<p><a class="button small" href="/projects/{{ project.id }}/environments/{{ selected_environment.id }}/sdk-keys">Manage {{ selected_environment.name }} SDK keys</a></p>
+{% endif %}
+<section class="panel">
+  <div class="section-heading"><div><h2>Feature flags</h2><p class="muted">Enable flags separately in each environment.</p></div></div>
+  {% if selected_environment %}
+  <form method="post" action="/projects/{{ project.id }}/flags" class="form-row flag-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="environment_id" value="{{ selected_environment.id }}">
+    <label>Key<input name="key" pattern="[A-Za-z0-9_-]+" maxlength="120" placeholder="new-checkout" required></label>
+    <label>Name<input name="name" maxlength="120" placeholder="New checkout" required></label>
+    <label>Type<select name="value_type"><option value="boolean">Boolean</option><option value="string">String</option><option value="number">Number</option></select></label>
+    <label>Default value<input name="default_value" placeholder="false" required></label>
+    <button class="button primary" type="submit">Add flag</button>
+  </form>
+  {% endif %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Flag</th><th>Key</th><th>Default</th><th>Environment status</th><th>Actions</th></tr></thead>
+      <tbody>
+      {% for row in flags %}
+        <tr>
+          <td><a href="/projects/{{ project.id }}/flags/{{ row.flag.id }}"><strong>{{ row.flag.name }}</strong></a></td>
+          <td><code>{{ row.flag.key }}</code></td>
+          <td><code>{{ row.flag.default_value }}</code></td>
+          <td>
+            <div id="flag-status-{{ row.flag.id }}">
+              {% if row.setting and row.setting.enabled %}
+              <span class="status enabled">Enabled</span>
+              {% else %}
+              <span class="status disabled">Disabled</span>
+              {% endif %}
+              <form class="inline-form" method="post" action="/projects/{{ project.id }}/flags/{{ row.flag.id }}/toggle"
+                    hx-post="/projects/{{ project.id }}/flags/{{ row.flag.id }}/toggle"
+                    hx-target="#flag-status-{{ row.flag.id }}" hx-swap="outerHTML">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <input type="hidden" name="environment_id" value="{{ selected_environment.id }}">
+              <button class="button small" type="submit">{% if row.setting and row.setting.enabled %}Disable{% else %}Enable{% endif %}</button>
+              </form>
+            </div>
+          </td>
+          <td>
+            <form method="post" action="/projects/{{ project.id }}/flags/{{ row.flag.id }}/archive">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button class="button small" type="submit">Archive</button>
+            </form>
+          </td>
+        </tr>
+        <tr><td colspan="5">
+          <details>
+            <summary>Rules, rollout, and kill switch</summary>
+            <form class="form-row flag-form" method="post" action="/projects/{{ project.id }}/flags/{{ row.flag.id }}/settings"
+                  hx-post="/projects/{{ project.id }}/flags/{{ row.flag.id }}/settings"
+                  hx-target="#settings-status-{{ row.flag.id }}" hx-swap="innerHTML">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <input type="hidden" name="environment_id" value="{{ selected_environment.id }}">
+              <label>Enabled<select name="enabled"><option value="true" {% if row.setting and row.setting.enabled %}selected{% endif %}>Yes</option><option value="false" {% if not row.setting or not row.setting.enabled %}selected{% endif %}>No</option></select></label>
+              <label>Kill switch<select name="kill_switch"><option value="false" {% if not row.setting or not row.setting.kill_switch %}selected{% endif %}>Off</option><option value="true" {% if row.setting and row.setting.kill_switch %}selected{% endif %}>Force default</option></select></label>
+              <label>Rollout <output>{{ row.setting.rollout_percentage if row.setting else 0 }}%</output><input type="range" min="0" max="100" step="1" name="rollout_percentage" value="{{ row.setting.rollout_percentage if row.setting else 0 }}" oninput="this.previousElementSibling.value=this.value+'%'"></label>
+              <label>Enabled value<input name="on_value" placeholder="{% if row.flag.value_type == 'boolean' %}true{% elif row.flag.value_type == 'number' %}1{% else %}new value{% endif %}" value="{{ row.setting.on_value if row.setting and row.setting.on_value is not none else '' }}"></label>
+              <label>Targeting JSON<textarea name="targeting_rules" rows="3" placeholder='{"operator":"AND","conditions":[{"attribute":"plan","operator":"equals","value":"pro"}]}'>{{ row.setting.targeting_rules|tojson if row.setting and row.setting.targeting_rules else "" }}</textarea></label>
+              <button class="button" type="submit">Save settings</button>
+              <span id="settings-status-{{ row.flag.id }}"></span>
+            </form>
+          </details>
+        </td></tr>
+      {% else %}
+        <tr><td colspan="5" class="empty-state">No flags yet. Add one above.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

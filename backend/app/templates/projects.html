@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Projects · Parakh{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div><p class="eyebrow">WORKSPACE</p><h1>Your projects</h1></div>
+</div>
+<section class="panel">
+  <h2>Create a project</h2>
+  <form method="post" action="/projects" class="form-row">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Project name<input name="name" maxlength="120" placeholder="Chai Corner" required></label>
+    <label>Project slug<input name="slug" maxlength="80" pattern="[a-z0-9]+(-[a-z0-9]+)*" placeholder="chai-corner" required></label>
+    <button class="button primary" type="submit">Create project</button>
+  </form>
+</section>
+<section class="project-grid">
+  {% for project in projects %}
+  <a class="project-card" href="/projects/{{ project.id }}">
+    <span class="project-icon">{{ project.name[:1]|upper }}</span>
+    <span><strong>{{ project.name }}</strong><small>{{ project.slug }}</small></span>
+    <span class="arrow">→</span>
+  </a>
+  {% else %}
+  <p class="empty-state">No projects yet. Create one to start managing feature flags.</p>
+  {% endfor %}
+</section>
+{% endblock %}
+

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ results.key }} results · Parakh{% endblock %}
+{% block content %}
+<p class="breadcrumbs"><a href="/projects">Projects</a> / Experiment results</p>
+<div class="page-heading"><div><p class="eyebrow">RESULTS · {{ results.status|upper }}</p><h1>{{ results.key }}</h1><p class="muted">Primary metric: {{ results.primary_metric }}</p></div></div>
+{% if results.status == "running" %}
+<form method="post" action="/experiments/{{ results.experiment_id }}/stop"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="button" type="submit">Stop experiment</button></form>
+{% endif %}
+<section class="panel">
+  <h2>Variant comparison</h2>
+  <div class="table-wrap"><table><thead><tr><th>Variant</th><th>Users</th><th>Conversions</th><th>Rate</th></tr></thead>
+  <tbody>{% for variant in results.variants %}<tr><td>{{ variant.key }}</td><td>{{ variant.users }}</td><td>{{ variant.conversions }}</td><td>{{ "%.2f"|format(variant.conversion_rate * 100) }}%</td></tr>{% endfor %}</tbody></table></div>
+  {% for comparison in results.comparisons %}
+  <p>{{ comparison.treatment }} vs {{ comparison.control }} — relative uplift: {{ "%.1f"|format(comparison.relative_uplift * 100) }}% · p-value {{ "%.4f"|format(comparison.p_value) }} · 95% CI for difference {{ "%.2f"|format(comparison.ci_low * 100) }}% to {{ "%.2f"|format(comparison.ci_high * 100) }}%</p>
+  {% endfor %}
+  {% if not results.comparisons %}
+  <p class="muted">Comparison stats will appear once each variant has at least one exposed user.</p>
+  {% endif %}
+  {% if results.srm and results.srm.mismatch %}<p class="alert">Sample Ratio Mismatch detected (p={{ "%.4f"|format(results.srm.p_value) }}). Check traffic allocation and exposure logging.</p>{% endif %}
+  <p class="muted">{{ results.peeking_warning }}</p>
+</section>
+<section class="panel"><h2>Conversions over time</h2><canvas id="daily-chart" aria-label="Daily experiment conversions"></canvas></section>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+<script>
+const data = {{ results.daily|tojson }};
+new Chart(document.getElementById("daily-chart"), {
+  type: "line",
+  data: {
+    labels: data.map((day) => day.date),
+    datasets: {{ results.variants|map(attribute="key")|list|tojson }}.map((key) => ({
+      label: key,
+      data: data.map((day) => day.variants[key]?.conversions ?? 0),
+      borderWidth: 2,
+      tension: 0.25
+    }))
+  }
+});
+</script>
+{% endblock %}

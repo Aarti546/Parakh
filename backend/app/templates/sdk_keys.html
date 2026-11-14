@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}SDK keys · {{ environment.name }} · Parakh{% endblock %}
+{% block content %}
+<p class="breadcrumbs"><a href="/projects/{{ project.id }}">{{ project.name }}</a> / {{ environment.name }} / SDK keys</p>
+<div class="page-heading"><div><p class="eyebrow">SDK ACCESS</p><h1>{{ environment.name }} keys</h1><p class="muted">Keys are stored hashed and shown only once.</p></div></div>
+{% if created_key %}<section class="panel"><p class="alert">Copy this key now; it will not be shown again.</p><code>{{ created_key }}</code></section>{% endif %}
+<section class="panel">
+  <h2>Create a key</h2>
+  <form method="post" action="/projects/{{ project.id }}/environments/{{ environment.id }}/sdk-keys" class="form-row">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Key name<input name="name" maxlength="100" placeholder="Chai Corner local" required></label>
+    <button class="button primary" type="submit">Create SDK key</button>
+  </form>
+</section>
+<section class="panel"><h2>Existing keys</h2><div class="table-wrap"><table>
+  <thead><tr><th>Name</th><th>Created</th><th>Status</th><th></th></tr></thead>
+  <tbody>{% for key in keys %}
+  <tr><td>{{ key.name }}</td><td>{{ key.created_at.strftime("%Y-%m-%d %H:%M UTC") }}</td><td>{% if key.revoked_at %}Revoked{% else %}Active{% endif %}</td><td>
+  {% if not key.revoked_at %}<form method="post" action="/projects/{{ project.id }}/environments/{{ environment.id }}/sdk-keys/{{ key.id }}/revoke"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="button small" type="submit">Revoke</button></form>{% endif %}
+  </td></tr>
+  {% else %}<tr><td colspan="4" class="empty-state">No keys yet.</td></tr>{% endfor %}</tbody>
+</table></div></section>
+{% endblock %}

@@ -1,0 +1,5 @@
+{% if error %}
+<p class="alert">{{ error }}</p>
+{% else %}
+<p class="status enabled">Plan for at least {{ users_per_variant }} users per variant.</p>
+{% endif %}

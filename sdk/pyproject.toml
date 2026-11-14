@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "parakh-sdk"
+version = "0.1.0"
+description = "Python SDK for Parakh feature flags and experiments"
+requires-python = ">=3.11"
+dependencies = [
+  "httpx==0.28.1",
+  "mmh3==5.2.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+asyncio_default_fixture_loop_scope = "function"
