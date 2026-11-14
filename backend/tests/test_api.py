@@ -1,3 +1,5 @@
+import re
+
 from fastapi.testclient import TestClient
 
 
@@ -267,6 +269,35 @@ def test_dashboard_csrf_register_create_project_and_toggle(
     )
     assert sample_size.status_code == 200
     assert "users per variant" in sample_size.text
+
+
+def test_register_page_replaces_invalid_stale_csrf_cookie(client: TestClient) -> None:
+    client.cookies.set(
+        "parakh_csrf_token",
+        "signed-with-an-old-secret",
+        domain="testserver.local",
+        path="/",
+    )
+
+    page = client.get("/register")
+
+    assert page.status_code == 200
+    token_match = re.search(r'name="csrf_token" value="([^"]+)"', page.text)
+    assert token_match is not None
+    form_token = token_match.group(1)
+    assert form_token != "signed-with-an-old-secret"
+    assert client.cookies["parakh_csrf_token"] == form_token
+
+    registered = client.post(
+        "/register",
+        data={
+            "csrf_token": form_token,
+            "email": "fresh@example.com",
+            "password": "correct-horse-42",
+        },
+        follow_redirects=False,
+    )
+    assert registered.status_code == 303
 
 
 def test_health_and_unauthenticated_access(client: TestClient, monkeypatch) -> None:

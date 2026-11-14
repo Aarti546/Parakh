@@ -45,7 +45,8 @@ templates = Jinja2Templates(directory=Path(__file__).resolve().parent.parent / "
 
 
 def _csrf_token(request: Request) -> str:
-    return request.cookies.get("parakh_csrf_token") or new_csrf_token()
+    token = request.cookies.get("parakh_csrf_token", "")
+    return token if token and verify_csrf_token(token) else new_csrf_token()
 
 
 def _set_csrf_cookie(response: Response, token: str) -> None:
